@@ -99,7 +99,8 @@ if analyze_btn:
     verdict   = result["verdict"]
     score_pct = int(result["score"] * 100)
     insights  = result["insights"]
-    ocr_text = result.get("ocr_text", "OCR not available")
+
+
     st.subheader("📊 Analysis Results")
     st.write("")
 
@@ -157,18 +158,6 @@ if analyze_btn:
                     st.write("")
         else:
             st.caption("No specific anomalies detected.")
-
-    st.divider()
-
-    # ── Extracted text ────────────────────────────────────────────────────────
-    st.subheader("📝 Extracted Text (OCR)")
-    st.text_area(
-        label="",
-        value=ocr_text if ocr_text else "(No text could be extracted from this document.)",
-        height=220,
-        disabled=True,
-        label_visibility="collapsed",
-    )
 
     st.divider()
     st.caption(
