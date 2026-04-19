@@ -99,7 +99,7 @@ if analyze_btn:
     verdict   = result["verdict"]
     score_pct = int(result["score"] * 100)
     insights  = result["insights"]
-ocr_text = result.get("ocr_text", "OCR not available")
+    ocr_text = result.get("ocr_text", "OCR not available")
     st.subheader("📊 Analysis Results")
     st.write("")
 
