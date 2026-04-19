@@ -1,0 +1,19 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+
+# ── Add these when you're ready to extend ──────────────────────────────────
+# OCR (Tesseract wrapper)
+# pytesseract==0.3.10
+# Pillow==10.3.0
+
+# PDF text extraction
+# pymupdf==1.24.2          # import fitz
+# pdfplumber==0.11.0
+
+# Image forensics / ELA
+# opencv-python-headless==4.9.0.80
+
+# Machine-learning model serving
+# scikit-learn==1.4.2
+# numpy==1.26.4

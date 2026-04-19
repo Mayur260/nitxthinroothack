@@ -31,12 +31,13 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def _save_upload(upload: UploadFile) -> Path:
+async def _save_upload(upload: UploadFile) -> Path:
     """Save an uploaded file to a temp location and return the path."""
     suffix = Path(upload.filename or "image.png").suffix or ".png"
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-    tmp.write(upload.file.read())
-    tmp.flush()
+    content = await upload.read()
+    tmp.write(content)
+    tmp.close()
     return Path(tmp.name)
 
 
@@ -83,8 +84,26 @@ async def analyze_document(file: UploadFile = File(...)):
     Returns a comprehensive JSON result with scores, insights, and images.
     """
     try:
-        file_path = _save_upload(file)
-        pil_image = Image.open(file_path).convert("RGB")
+        file_path = await _save_upload(file)
+        
+        # Load image or convert first page of PDF
+        if file_path.suffix.lower() == ".pdf":
+            import fitz
+            doc = fitz.open(file_path)
+            if len(doc) == 0:
+                raise ValueError("PDF is empty")
+            page = doc.load_page(0)
+            pix = page.get_pixmap()
+            pil_image = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            doc.close()
+            
+            # Since ML code expects an image path sometimes, replace file_path
+            # with a temp image path
+            img_path = file_path.with_suffix(".png")
+            pil_image.save(img_path)
+            file_path = img_path
+        else:
+            pil_image = Image.open(file_path).convert("RGB")
 
         # ── ELA ──────────────────────────────────────────────────────────
         from src.analysis.ela import generate_ela, ela_score
@@ -222,7 +241,7 @@ async def analyze_document(file: UploadFile = File(...)):
 async def detect_copy_move_endpoint(file: UploadFile = File(...)):
     """Run copy-move forgery detection on an uploaded image."""
     try:
-        file_path = _save_upload(file)
+        file_path = await _save_upload(file)
 
         from src.copy_move.detector import detect_copy_move
         from src.copy_move.visualizer import overlay_heatmap
@@ -254,8 +273,8 @@ async def verify_signature(
 ):
     """Compare two signature images and return verification result."""
     try:
-        ref_path = _save_upload(reference)
-        qry_path = _save_upload(query)
+        ref_path = await _save_upload(reference)
+        qry_path = await _save_upload(query)
 
         weights_path = Path("weights/siamese_best.pt")
         if not weights_path.exists():
